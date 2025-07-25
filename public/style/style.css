@@ -632,3 +632,62 @@ a {
     background-color: rgba(220, 20, 60, 0.25);
     border-color: #dc143c;
 }
+.modal-error-message {
+    background-color: #ffdddd;
+    border-left: 6px solid #f44336;
+    margin-top: 10px;
+    padding: 10px;
+    color: #f44336;
+    font-weight: bold;
+    text-align: left;
+    display: none;
+}
+
+.modal-submitted-box {
+    background-color: #1f1f2e;
+    padding: 0.8rem;
+    border-radius: 5px;
+    margin-top: 10px;
+    color: #eee;
+    text-align: left;
+    display: none;
+}
+.modal-submitted-box h3 {
+    margin-top: 0;
+    font-size: 1em;
+    color: #ccc;
+}
+.modal-submitted-box p {
+    margin-bottom: 0;
+    word-break: break-all;
+}
+.modal-hint {
+    font-size: 0.9em;
+    color: #aaa;
+    margin-top: -10px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+.download-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #0f4c75;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    margin-top: 20px;
+    transition: background-color 0.3s ease;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+.download-link:hover {
+    background-color: #3282b8;
+}
+.download-link img {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+}
