@@ -76,17 +76,30 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
                     </div>
                 <?php endif; ?>
             
-            <div class="course-grid">
+           <div class="course-grid">
                 <?php
                 $sql = "SELECT title, description, link FROM courses";
                 $result = mysqli_query($conn, $sql);
 
                 if (mysqli_num_rows($result) > 0) {
-                    while($row = mysqli_fetch_assoc($result)) {
+                     while($row = mysqli_fetch_assoc($result)) {
                         echo '<div class="course-card">';
                         echo '    <div class="card-header">' . htmlspecialchars($row["title"]) . '</div>';
                         echo '    <div class="card-body">' . htmlspecialchars($row["description"]) . '</div>';
-                        echo '    <div class="card-footer"><a href="' . htmlspecialchars($row["link"]) . '" class="btn">View Course</a></div>';
+                        
+                        // Check course type and redirect to appropriate UI
+                        $courseLink = $row["link"];
+                        
+                        // SQL Injection course
+                        if (stripos($row["title"], 'SQL Injection') !== false || stripos($row["title"], 'SQLi') !== false) {
+                             $courseLink = 'UI_SQLi.php';
+                            }
+                        // XSS course
+                        elseif (stripos($row["title"], 'XSS') !== false || stripos($row["title"], 'Cross-Site Scripting') !== false || stripos($row["title"], 'XSS for PENTESTERS') !== false) {
+                             $courseLink = 'UI_XSS.php';
+                            }
+                        
+                        echo '    <div class="card-footer"><a href="' . htmlspecialchars($courseLink) . '" class="btn">View Course</a></div>';
                         echo '</div>';
                     }
                 } else {
