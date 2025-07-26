@@ -4,6 +4,22 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: login.php");
     exit;
 }
+
+if (isset($_GET['message'])) {
+    $input_message = $_GET['message'];
+    $pattern = '/<script/i';
+
+    if (preg_match($pattern, $input_message)) {
+        header("location: flag.php");
+        exit;
+    } else {
+        $error_msg_encoded = urlencode("Input eerror");
+        $submitted_input_encoded = urlencode($input_message);
+
+        header("location: support.php?error_message=" . $error_msg_encoded . "&submitted_input=" . $submitted_input_encoded);
+        exit;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -15,6 +31,7 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
 </head>
 <body>
 
@@ -56,20 +73,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
             <h1>Support Center</h1>
             <p>We're here to help you with any questions or issues you might have.</p>
 
-            <?php if (isset($_GET['message'])): ?>
-
-                <div class="success-message">Thank you! Your feedback has been received.</div>
-
-                <div class="feedback-submitted-box" style="background-color: #2c2c38; padding: 1rem; border-radius: 5px; margin: 2rem 0;">
-                    <h3>Your submitted message:</h3>
-                    <p>
-                        <?php 
-                            echo $_GET['message']; 
-                        ?>
-                    </p>
-                </div>
-            <?php endif; ?>
-
             <div class="support-section">
                 <h2>Frequently Asked Questions (FAQ)</h2>
                 <div class="faq-item">
@@ -99,20 +102,22 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     </main>
 
     <div id="giveFeedbackModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close-button" id="closeGiveFeedbackModal">&times;</span>
-        <h2>Hello,<?php echo htmlspecialchars($_SESSION['username']); ?>! Give us feedback or report</h2>
-        <p></p>
-        <form id="feedbackForm" action="support.php" method="GET">
-            <textarea id="feedback_message" name="message" rows="5" required placeholder="Tulis pesan di sini..."></textarea>
-            <button type="submit" class="send-button">Send!</button>
-        </form>
+        <div class="modal-content">
+            <span class="close-button" id="closeGiveFeedbackModal">&times;</span>
+            <h2>Hello,<?php echo htmlspecialchars($_SESSION['username']); ?>! Give us feedback or report</h2>
 
+            <form id="feedbackForm" action="support.php" method="GET">
+                <textarea id="feedback_message_input" name="message" rows="5" required placeholder="Tulis pesan di sini..."></textarea>
+                <button type="submit" class="send-button">Send!</button>
+
+                <div id="modalErrorMessage" class="modal-error-message"></div>
+                <div id="modalSubmittedBox" class="modal-submitted-box">
+                    <h3>Pesan yang Anda kirim:</h3>
+                    <p id="modalSubmittedMessageContent"></p>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
-
-
-
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -131,10 +136,15 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
         const openModalBtn = document.getElementById('openGiveFeedbackModal');
         const closeModalBtn = document.getElementById('closeGiveFeedbackModal');
         const feedbackModal = document.getElementById('giveFeedbackModal');
+        const modalErrorMessageDiv = document.getElementById('modalErrorMessage');
+        const modalSubmittedBoxDiv = document.getElementById('modalSubmittedBox');
+        const modalSubmittedMessageContentP = document.getElementById('modalSubmittedMessageContent');
 
         if (openModalBtn && closeModalBtn && feedbackModal) {
             openModalBtn.onclick = function() {
                 feedbackModal.style.display = "flex";
+                modalErrorMessageDiv.style.display = 'none';
+                modalSubmittedBoxDiv.style.display = 'none';
             }
 
             closeModalBtn.onclick = function() {
@@ -144,6 +154,21 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
             window.onclick = function(event) {
                 if (event.target == feedbackModal) {
                     feedbackModal.style.display = "none";
+                }
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorMessage = urlParams.get('error_message');
+            const submittedInput = urlParams.get('submitted_input');
+
+            if (errorMessage) {
+                feedbackModal.style.display = "flex";
+                modalErrorMessageDiv.textContent = decodeURIComponent(errorMessage);
+                modalErrorMessageDiv.style.display = 'block';
+
+                if (submittedInput) {
+                    modalSubmittedMessageContentP.innerHTML = decodeURIComponent(submittedInput);
+                    modalSubmittedBoxDiv.style.display = 'block';
                 }
             }
         }
