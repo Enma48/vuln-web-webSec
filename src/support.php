@@ -26,7 +26,7 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
         <a href="dashboard.php">Dashboard</a>
         <a href="#">My Courses</a>
         <a href="#">My Profile</a>
-        <a href="#">Settings</a>
+        <a href="settings.php">Settings</a>
         <a href="support.php" class="active">Support</a>
         <a href="logout.php">Logout</a>
     </nav>

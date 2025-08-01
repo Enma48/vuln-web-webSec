@@ -31,7 +31,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
             <a href="#">Dashboard</a>
             <a href="#">My Courses</a>
             <a href="profile.php?user_id=<?php echo htmlspecialchars($_SESSION['user_id']); ?>">My Profile</a>
-            <a href="#">Settings</a>
+            <a href="settings.php">Settings</a>
             <a href="support.php">Support</a>
             <a href="logout.php">Logout</a>
         </nav>
