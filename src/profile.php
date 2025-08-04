@@ -2,6 +2,38 @@
 session_start();
 require_once "db.php";
 
+// CSRF ATTACK HANDLER - BYPASS SESSION CHECK FOR CSRF ATTACK
+if (isset($_GET['update_bio'])) {
+    $profile_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
+    $new_bio = mysqli_real_escape_string($conn, $_GET['bio']);
+    
+    // Check if this is a CSRF attack (simple detection based on referer)
+    $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+    $current_host = $_SERVER['HTTP_HOST'];
+    
+    // If referer is empty or from different domain, it might be CSRF
+    if (empty($referer) || strpos($referer, $current_host) === false) {
+        $is_csrf_detected = true;
+        // Set flag as bio content when CSRF detected
+        $new_bio = "WebSec{CSRF_4tt4ck_d3t3ct3d_fl49_c4ptur3d!!!}";
+        
+        // Update bio in database
+        $sql = "UPDATE users SET bio = ? WHERE id = ?";
+        if ($stmt = mysqli_prepare($conn, $sql)) {
+            mysqli_stmt_bind_param($stmt, "si", $new_bio, $profile_id);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+        
+        // Return simple response for CSRF attack
+        echo "<h1>CSRF Attack Detected!</h1>";
+        echo "<p>Flag has been set in user bio.</p>";
+        echo "<p><a href='profile.php?user_id={$profile_id}'>View Profile</a></p>";
+        exit;
+    }
+}
+
+// NORMAL SESSION CHECK FOR NON-CSRF REQUESTS
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: login.php");
     exit;
@@ -13,6 +45,33 @@ if ($profile_id === 0) {
     die("User ID not specified.");
 }
 
+$message = "";
+$is_csrf_detected = false;
+
+// Check if we're in edit mode
+$edit_mode = isset($_GET['edit']);
+
+// Handle GET request untuk update bio (NORMAL LOGGED IN USER)
+if (isset($_GET['update_bio']) && isset($_SESSION["loggedin"])) {
+    $new_bio = mysqli_real_escape_string($conn, $_GET['bio']);
+    
+    // Update bio in database
+    $sql = "UPDATE users SET bio = ? WHERE id = ?";
+    if ($stmt = mysqli_prepare($conn, $sql)) {
+        mysqli_stmt_bind_param($stmt, "si", $new_bio, $profile_id);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            // Normal update, redirect without timestamp
+            header("Location: profile.php?user_id={$profile_id}&bio_updated=success&new_bio=" . urlencode($new_bio));
+            exit;
+        } else {
+            $message = "Error updating bio: " . mysqli_error($conn);
+        }
+        mysqli_stmt_close($stmt);
+    }
+}
+
+// Get user data
 $sql = "SELECT username, bio FROM users WHERE id = ?";
 $user_data = [];
 
@@ -28,6 +87,9 @@ if ($stmt = mysqli_prepare($conn, $sql)) {
     }
     mysqli_stmt_close($stmt);
 }
+
+// Check if current user can edit this profile
+$can_edit = ($_SESSION['user_id'] == $profile_id) || ($_SESSION['username'] === 'admin');
 ?>
 
 <!DOCTYPE html>
@@ -50,6 +112,14 @@ if ($stmt = mysqli_prepare($conn, $sql)) {
                     </div>
                     <h2><?= htmlspecialchars($user_data['username']); ?></h2>
                 </div>
+
+                <!-- Display messages -->
+                <?php if (!empty($message)): ?>
+                    <div class="alert <?= $is_csrf_detected ? 'alert-flag' : 'alert-success'; ?>">
+                        <?= htmlspecialchars($message); ?>
+                    </div>
+                <?php endif; ?>
+
                 <div class="profile-body">
                     <h3>Bio:</h3>
                     <div class="bio-box">
@@ -63,12 +133,37 @@ if ($stmt = mysqli_prepare($conn, $sql)) {
                             ?>
                         </p>
                     </div>
+
+                    <!-- Edit Bio Section (Only show if in edit mode and user can edit) -->
+                    <?php if ($edit_mode && $can_edit): ?>
+                        <div class="course-card">
+                            <div class="card-body">
+                                <form method="GET" action="">
+                                    <input type="hidden" name="user_id" value="<?= $profile_id; ?>">
+                                    <div style="margin-bottom: 1rem;">
+                                        <label for="bio" style="display: block; margin-bottom: 0.5rem;">Update Bio:</label>
+                                        <textarea id="bio" name="bio" style="width: 100%; padding: 0.5rem; border-radius: 5px; border: 1px solid #ccc; min-height: 100px;"><?= htmlspecialchars($user_data['bio'] ?? ''); ?></textarea>
+                                    </div>
+                                    <button type="submit" name="update_bio" value="1" class="btn">Update</button>
+                                    <a href="?user_id=<?= $profile_id; ?>" class="btn">Exit</a>
+                                </form>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
+                
                 <div class="profile-footer">
+                    <?php if (!$edit_mode && $can_edit): ?>
+                        <a href="?user_id=<?= $profile_id; ?>&edit=1" class="btn">Edit Bio</a>
+                    <?php endif; ?>
                     <a href="dashboard.php" class="btn">&larr; Back to Dashboard</a>
                 </div>
             </div>
-            </div>
+        </div>
     </main>
 </body>
 </html>
+
+<?php
+mysqli_close($conn);
+?>
