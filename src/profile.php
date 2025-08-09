@@ -2,6 +2,24 @@
 session_start();
 require_once "db.php";
 
+//Otorisasi dilakukan di awal
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
+    header("location: login.php");
+    exit;
+}
+
+$profile_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
+
+if ($profile_id === 0) {
+    die("User ID not specified.");
+}
+
+//Menambahkan agar hanya user dan admin yang bisa mengakses profil. Menghindari dan menyelesaikan Vulnerability IDOR
+if ($_SESSION['user_id'] != $profile_id && $_SESSION['username'] !== 'admin') {
+    header("HTTP/1.1 403 Forbidden");
+    die("Anda tidak memiliki izin untuk mengakses profil ini");
+}
+
 if (isset($_GET['update_bio'])) {
     $profile_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
     $new_bio = mysqli_real_escape_string($conn, $_GET['bio']);
@@ -25,17 +43,6 @@ if (isset($_GET['update_bio'])) {
         echo "<p><a href='profile.php?user_id={$profile_id}'>View Profile</a></p>";
         exit;
     }
-}
-
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("location: login.php");
-    exit;
-}
-
-$profile_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
-
-if ($profile_id === 0) {
-    die("User ID not specified.");
 }
 
 $message = "";
